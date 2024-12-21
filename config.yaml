@@ -29,11 +29,11 @@ options:
   borg_compression: ""
   borg_backup_keep_snapshots: 5
 schema:
-  borg_user: "str"
-  borg_repo_url: "str"
-  borg_host: "str"
-  borg_ssh_params: "str"
-  borg_passphrase: "str"
-  borg_reponame: "str"
-  borg_compression: "str"
+  borg_user: "str?"
+  borg_repo_url: "str?"
+  borg_host: "str?"
+  borg_ssh_params: "str?"
+  borg_passphrase: "str?"
+  borg_reponame: "str?"
+  borg_compression: "str?"
   borg_backup_keep_snapshots: "int"
