@@ -1,50 +1,51 @@
-#!/usr/bin/env bashio
+#!/usr/bin/with-contenv bashio
+# shellcheck shell=bash
 set +u
 
 export BORG_BASE_DIR=/config/borg
 export BORG_CACHE_DIR=${BORG_BASE_DIR}/cache
 export BORG_PASSPHRASE=$(bashio::config 'borg_passphrase')
 export BORG_REPO=""
+
 export _BORG_TOBACKUP=/backup/borg_unpacked
 export _BORG_SSH_KNOWN_HOSTS=${BORG_BASE_DIR}/known_hosts
 export _BORG_SSH_KEY=${BORG_BASE_DIR}/keys/borg_backup
 export _BORG_REPO_URL=$(bashio::config 'borg_repo_url')
 export _BORG_USER=$(bashio::config 'borg_user')
 export _BORG_HOST=$(bashio::config 'borg_host')
-export _BORG_REPONAME=$(bashio::config 'borg_reponame')
+export _BORG_REPO_NAME=$(bashio::config 'borg_repo_name')
 export _BORG_COMPRESSION=$(bashio::config 'borg_compression')
 export _BORG_BACKUP_DEBUG="$(bashio::config 'borg_backup_debug')"
 export _BORG_BACKUP_KEEP_SNAPSHOTS="$(bashio::config 'borg_backup_keep_snapshots')"
 export _BORG_DEBUG=''
+
 export borg_error=0
 
-export BORG_RSH="ssh -o UserKnownHostsFile=${_BORG_SSH_KNOWN_HOSTS} -i ${_BORG_SSH_KEY} $(bashio::config 'borg_ssh_params')"
+export BORG_RSH="ssh -o UserKnownHostsFile=${_BORG_SSH_KNOWN_HOSTS} -i ${_BORG_SSH_KEY} $(bashio::config 'borg_ssh_params' "--")"
 
-mkdir -p $(dirname ${_BORG_SSH_KEY}) ${BORG_CACHE_DIR}
+mkdir -p "$(dirname "${_BORG_SSH_KEY}")" ${BORG_CACHE_DIR}
 
 ##### passwords crap
-if [ ${#BORG_PASSPHRASE} -eq 0 ];then
+if [[ $BORG_PASSPHRASE == "null" ]]; then
     export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes
     unset BORG_PASSPHRASE
 fi
 # set zstd as default compression
-if [ ${#_BORG_COMPRESSION} -eq 0 ];then
+if [[ "$_BORG_COMPRESSION" == "null" ]]; then
     _BORG_COMPRESSION="zstd"
 fi
 
-if [ ${#BORG_BACKUP_DEBUG} -ne 0 ];then
+if [[ "$_BORG_BACKUP_DEBUG" == "true" ]]; then
     _BORG_DEBUG="--debug"
 fi
 
 function sanity_checks {
-    if [[ ( ${#_BORG_REPO_URL} -eq 0 ) && ( ${#_BORG_HOST} -eq 0 )]];then
-        bashio::log.error "both 'borg_repo_url' 'borg_host' undefined"
-        bashio::log.error "please define one of them"
-        borg_error=$(($borg_error + 1))
-    elif [[ ( ${#_BORG_REPO_URL} -gt 0 ) && ( ${#_BORG_HOST} -gt 0 )]];then
-        bashio::log.error "'borg_repo_url' and 'borg_host' are definded"
-        bashio::log.error "please define only one of them"
-        borg_error=$(($borg_error + 1))
+    if [[ ($_BORG_REPO_URL == "null") && ($_BORG_HOST == "null") ]]; then
+        bashio::log.error "both 'borg_repo_url' 'borg_host' undefined, please define one of them"
+        borg_error=$(( borg_error + 1 ))
+    elif [[ ($_BORG_REPO_URL != "null") && ($_BORG_HOST != "null") ]]; then
+        bashio::log.error "'borg_repo_url' and 'borg_host' are defined, please define only one of them"
+        borg_error=$(( borg_error + 1 ))
     else
         bashio::log.info "sanity preserved"
     fi
@@ -52,17 +53,19 @@ function sanity_checks {
 
 function set_borg_repo_path {
     bashio::log.debug "Setting BORG_REPO"
-    if [ ${#_BORG_REPO_URL} -gt 0 ]; then
+
+    # Repository URL set explicitly via 'borg_repo_url' option
+    if [[ $_BORG_REPO_URL != "null" ]]; then
         BORG_REPO=${_BORG_REPO_URL}
         bashio::log.debug "BORG_REPO set"
         return
-    elif [ ${#_BORG_USER} -gt 0 ];then
-        BORG_REPO+="${_BORG_USER}@"
     fi
-    if [ ${#_BORG_USER} -eq 0 ];then
-        BORG_REPO+="${_BORG_HOST}/${_BORG_REPONAME}"
+
+    # Construct repository URL from parts
+    if [[ $_BORG_USER != "null" ]]; then
+        BORG_REPO="${_BORG_USER}@${_BORG_HOST}:${_BORG_REPO_NAME}"
     else
-        BORG_REPO+="${_BORG_HOST}:${_BORG_REPONAME}"
+        BORG_REPO="${_BORG_HOST}/${_BORG_REPO_NAME}"
     fi
     bashio::log.debug "BORG_REPO set"
     return
@@ -71,11 +74,11 @@ function set_borg_repo_path {
 function add_borg_host_to_known_hosts {
     bashio::log.info "in add_borg_host_to_known_hosts"
     if ! bashio::fs.file_exists ${_BORG_SSH_KNOWN_HOSTS}; then
-        if [[ ( ${#_BORG_USER} -gt 0 ) ]];then
-            bashio::log.info "Adding host $1 into ${_BORG_SSH_KNOWN_HOSTS}"
-            ssh-keyscan ${_BORG_HOST} >> ${_BORG_SSH_KNOWN_HOSTS}
+        if [[ $_BORG_USER != "null" ]]; then
+            bashio::log.info "Adding host $_BORG_HOST into ${_BORG_SSH_KNOWN_HOSTS}"
+            ssh-keyscan "${_BORG_HOST}" >> ${_BORG_SSH_KNOWN_HOSTS}
         else
-            bashio::log.info "Local path ignoring ssh and unseting BORG_RSH"
+            bashio::log.info "Local path ignoring ssh and unsetting BORG_RSH"
             unset BORG_RSH
         fi
     fi
@@ -113,7 +116,7 @@ function borg_create_backup {
     bashio::log.info "Snapshot done"
     export SNAP_RES=$(jq < /tmp/borg_backup_$$ .result -r)
     # if it is not ok something failed and should be logged anyway
-    if [ $SNAP_RES != 'ok' ];then
+    if [[ "$SNAP_RES" != "ok" ]]; then
         bashio::log.error "Failed creating ha snapshot"
         exit -1
     fi
@@ -132,7 +135,6 @@ function borg_create_backup {
     bashio::log.info "End borg create --stats..."
     # cleanup
     rm -rf  ${_BORG_TOBACKUP} /tmp/borg_backup_$$
-
 }
 
 function clean_old_backups {
@@ -162,4 +164,3 @@ init_borg_repo
 show_ssh_key
 borg_create_backup
 clean_old_backups
-#
