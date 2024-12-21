@@ -2,8 +2,8 @@ name: "Borg-based Backup for Home Assistant"
 version: "2.0.0"
 slug: "borg_backup"
 description: "Borgbackup!"
-url: "https://github.com/bmanojlovic/home-assistant-borg-backup/"
-image: "bmanojlovic/{arch}-borg-backup"
+url: "https://github.com/ceskyDJ/home-assistant-borg-backup/"
+image: "ghcr.io/ceskydj/{arch}-borg-backup"
 arch:
   - aarch64
   - amd64
