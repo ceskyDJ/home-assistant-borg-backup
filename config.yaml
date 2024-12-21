@@ -1,5 +1,5 @@
-name: "Borgbackup for homeassistant"
-version: "1.2"
+name: "Borg-based Backup for Home Assistant"
+version: "2.0.0"
 slug: "borg_backup"
 description: "Borgbackup!"
 url: "https://github.com/bmanojlovic/home-assistant-borg-backup/"
