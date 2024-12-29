@@ -118,7 +118,7 @@ function borg_create_backup {
     # if it is not ok something failed and should be logged anyway
     if [[ "$SNAP_RES" != "ok" ]]; then
         bashio::log.error "Failed creating ha snapshot"
-        exit -1
+        exit 1
     fi
     export SNAP_SLUG=$(jq < /tmp/borg_backup_$$ -r .data.slug)
     mkdir -p ${_BORG_TOBACKUP}/${SNAP_SLUG}
@@ -154,7 +154,7 @@ function clean_old_backups {
 sanity_checks
 if [[ $borg_error -gt 0 ]];then
     bashio::log.warning "error state bailing out..."
-    exit -1
+    exit 1
 fi
 generate_ssh_key
 set_borg_repo_path
