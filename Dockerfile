@@ -6,7 +6,8 @@ ENV LANG=C.UTF-8
 RUN apk add --no-cache \
         borgbackup \
         openssh-keygen \
-        openssh-client
+        openssh-client \
+        tar
 
 # Home Assistant CLI
 ARG BUILD_ARCH
