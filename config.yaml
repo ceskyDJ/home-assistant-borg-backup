@@ -1,7 +1,7 @@
 name: "Borg-based Backup for Home Assistant"
 version: "2.0.0"
 slug: "borg_backup"
-description: "Borgbackup!"
+description: "Add-on providing access to Borg in automations. So, you can easily create compressed deduplicated remote backups"
 url: "https://github.com/ceskyDJ/home-assistant-borg-backup/"
 image: "ghcr.io/ceskydj/{arch}-borg-backup"
 arch:
