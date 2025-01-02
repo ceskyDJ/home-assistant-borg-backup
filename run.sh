@@ -2,7 +2,7 @@
 # shellcheck shell=bash
 set +u
 
-export BORG_BASE_DIR=/config/borg
+export BORG_BASE_DIR=/config
 export BORG_CACHE_DIR=${BORG_BASE_DIR}/cache
 export BORG_PASSPHRASE=$(bashio::config 'borg_passphrase')
 export BORG_REPO=""
@@ -21,7 +21,7 @@ export _BORG_DEBUG=''
 
 export borg_error=0
 
-export BORG_RSH="ssh -o UserKnownHostsFile=${_BORG_SSH_KNOWN_HOSTS} -i ${_BORG_SSH_KEY} $(bashio::config 'borg_ssh_params' "--")"
+export BORG_RSH="ssh -o UserKnownHostsFile=${_BORG_SSH_KNOWN_HOSTS} -o StrictHostKeyChecking=accept-new -i ${_BORG_SSH_KEY} $(bashio::config 'borg_ssh_params' "--")"
 
 mkdir -p "$(dirname "${_BORG_SSH_KEY}")" ${BORG_CACHE_DIR}
 
@@ -70,20 +70,6 @@ function set_borg_repo_path {
     bashio::log.debug "BORG_REPO set"
     return
 }
-
-function add_borg_host_to_known_hosts {
-    bashio::log.info "in add_borg_host_to_known_hosts"
-    if ! bashio::fs.file_exists ${_BORG_SSH_KNOWN_HOSTS}; then
-        if [[ $_BORG_USER != "null" ]]; then
-            bashio::log.info "Adding host $_BORG_HOST into ${_BORG_SSH_KNOWN_HOSTS}"
-            ssh-keyscan "${_BORG_HOST}" >> ${_BORG_SSH_KNOWN_HOSTS}
-        else
-            bashio::log.info "Local path ignoring ssh and unsetting BORG_RSH"
-            unset BORG_RSH
-        fi
-    fi
-}
-
 
 function generate_ssh_key {
     if ! bashio::fs.file_exists "${_BORG_SSH_KEY}"; then
@@ -158,7 +144,6 @@ if [[ $borg_error -gt 0 ]];then
 fi
 generate_ssh_key
 set_borg_repo_path
-add_borg_host_to_known_hosts
 
 init_borg_repo
 show_ssh_key
