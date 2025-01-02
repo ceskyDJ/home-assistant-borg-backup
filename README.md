@@ -61,11 +61,6 @@ Now, insert some (prefer randomly generated) string that will be used as passphr
 borg_passphrase: some-random-string---CHANGE-IT!
 ```
 
-#### Number of Kept Snapshots
-
-You can change a number of snapshots that will be kept in the Borg repository.
-After reaching this number of stored snapshots, the last snapshot will be automatically deleted from the repository.
-
 #### Configuration Done
 
 When you have filled all the required fields, you're done here!

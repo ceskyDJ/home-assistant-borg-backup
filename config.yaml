@@ -20,7 +20,6 @@ map:
   - addon_config:rw
   - backup:rw
 options:
-  borg_backup_keep_snapshots: 5
   borg_backup_debug: false
 schema:
   borg_user: "str"
@@ -29,5 +28,4 @@ schema:
   borg_passphrase: "str"
   borg_ssh_params: "str?"
   borg_compression: "str?"
-  borg_backup_keep_snapshots: "int"
   borg_backup_debug: "bool"

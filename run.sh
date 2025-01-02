@@ -15,7 +15,6 @@ export _BORG_HOST=$(bashio::config 'borg_host')
 export _BORG_REPO_NAME=$(bashio::config 'borg_repo_name')
 export _BORG_COMPRESSION=$(bashio::config 'borg_compression')
 export _BORG_BACKUP_DEBUG="$(bashio::config 'borg_backup_debug')"
-export _BORG_BACKUP_KEEP_SNAPSHOTS="$(bashio::config 'borg_backup_keep_snapshots')"
 export _BORG_DEBUG=''
 
 export borg_error=0
@@ -99,22 +98,10 @@ function borg_create_backup {
     bashio::log.info "Start borg create"
     borg create ${_BORG_DEBUG} --compression ${_BORG_COMPRESSION} --stats ::"${BACKUP_TIME}" ${_BORG_TOBACKUP}/${SNAP_SLUG}
     bashio::log.info "End borg create --stats..."
+
     # cleanup
     rm -rf  ${_BORG_TOBACKUP} /tmp/borg_backup_$$
-}
-
-function clean_old_backups {
-    ha backups reload
-    export ALL_SNAPS=$(ha backups --raw-json|jq '.data.backups[].name' -r| sort | wc -l)
-    export DISCARD_SNAPS=$(($ALL_SNAPS - $_BORG_BACKUP_KEEP_SNAPSHOTS))
-    export ALL_SNAPS=$(ha backups --raw-json|jq '.data.backups[].name' -r| sort | head -n ${DISCARD_SNAPS})
-    for snap in $ALL_SNAPS ; do
-        SLUG=$(ha backups --raw-json |jq -r '.data.backups[]|select (.name=="'${snap}'")|.slug')
-        bashio::log.info "Removing snapshot ${snap} with slug id $SLUG started"
-        ha backups remove $SLUG
-        bashio::log.info "Removed snapshot ${snap} with slug id $SLUG"
-    done
-    bashio::log.info "Cleanup of old backups done"
+    ha backups remove "$SNAP_SLUG"
 }
 
 if [[ $borg_error -gt 0 ]];then
@@ -127,4 +114,3 @@ set_borg_repo_path
 init_borg_repo
 show_ssh_key
 borg_create_backup
-clean_old_backups
