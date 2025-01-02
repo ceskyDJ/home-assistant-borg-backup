@@ -1,0 +1,11 @@
+# Configuration file for GitHub Dependabot
+
+version: 2
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    assignees:
+      - "ceskyDJ"
