@@ -10,7 +10,6 @@ export BORG_REPO=""
 export _BORG_TOBACKUP=/backup/borg_unpacked
 export _BORG_SSH_KNOWN_HOSTS=${BORG_BASE_DIR}/known_hosts
 export _BORG_SSH_KEY=${BORG_BASE_DIR}/keys/borg_backup
-export _BORG_REPO_URL=$(bashio::config 'borg_repo_url')
 export _BORG_USER=$(bashio::config 'borg_user')
 export _BORG_HOST=$(bashio::config 'borg_host')
 export _BORG_REPO_NAME=$(bashio::config 'borg_repo_name')
@@ -39,27 +38,8 @@ if [[ "$_BORG_BACKUP_DEBUG" == "true" ]]; then
     _BORG_DEBUG="--debug"
 fi
 
-function sanity_checks {
-    if [[ ($_BORG_REPO_URL == "null") && ($_BORG_HOST == "null") ]]; then
-        bashio::log.error "both 'borg_repo_url' 'borg_host' undefined, please define one of them"
-        borg_error=$(( borg_error + 1 ))
-    elif [[ ($_BORG_REPO_URL != "null") && ($_BORG_HOST != "null") ]]; then
-        bashio::log.error "'borg_repo_url' and 'borg_host' are defined, please define only one of them"
-        borg_error=$(( borg_error + 1 ))
-    else
-        bashio::log.info "sanity preserved"
-    fi
-}
-
 function set_borg_repo_path {
     bashio::log.debug "Setting BORG_REPO"
-
-    # Repository URL set explicitly via 'borg_repo_url' option
-    if [[ $_BORG_REPO_URL != "null" ]]; then
-        BORG_REPO=${_BORG_REPO_URL}
-        bashio::log.debug "BORG_REPO set"
-        return
-    fi
 
     # Construct repository URL from parts
     if [[ $_BORG_USER != "null" ]]; then
@@ -137,7 +117,6 @@ function clean_old_backups {
     bashio::log.info "Cleanup of old backups done"
 }
 
-sanity_checks
 if [[ $borg_error -gt 0 ]];then
     bashio::log.warning "error state bailing out..."
     exit 1
