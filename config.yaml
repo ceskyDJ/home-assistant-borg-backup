@@ -17,7 +17,7 @@ hassio_role: "backup"
 hassio_api: true
 homeassistant_api: true
 map:
-  - config:rw
+  - addon_config:rw
   - backup:rw
 options:
   borg_backup_keep_snapshots: 5
